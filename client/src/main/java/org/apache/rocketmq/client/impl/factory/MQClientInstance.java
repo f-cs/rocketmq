@@ -603,6 +603,14 @@ public class MQClientInstance {
         }
     }
 
+    /**
+     * 更新topic
+     *
+     * @param topic
+     * @param isDefault false
+     * @param defaultMQProducer null
+     * @return
+     */
     public boolean updateTopicRouteInfoFromNameServer(final String topic, boolean isDefault,
         DefaultMQProducer defaultMQProducer) {
         try {
@@ -620,6 +628,7 @@ public class MQClientInstance {
                             }
                         }
                     } else {
+                        // 创建并返回topic路由数据
                         topicRouteData = this.mQClientAPIImpl.getTopicRouteInfoFromNameServer(topic, clientConfig.getMqClientApiTimeout());
                     }
                     if (topicRouteData != null) {
@@ -972,6 +981,13 @@ public class MQClientInstance {
         return this.consumerTable.get(group);
     }
 
+    /**
+     * 通过brokerName查询broker地址
+     *
+     * @param brokerName
+     *
+     * @return
+     */
     public String findBrokerAddressInPublish(final String brokerName) {
         HashMap<Long/* brokerId */, String/* address */> map = this.brokerAddrTable.get(brokerName);
         if (map != null && !map.isEmpty()) {

@@ -449,6 +449,28 @@ public class MQClientAPIImpl {
         return sendMessage(addr, brokerName, msg, requestHeader, timeoutMillis, communicationMode, null, null, null, 0, context, producer);
     }
 
+    /**
+     * 发送最底层代码
+     *
+     * @param addr
+     * @param brokerName
+     * @param msg
+     * @param requestHeader
+     * @param timeoutMillis
+     * @param communicationMode
+     * @param sendCallback
+     * @param topicPublishInfo
+     * @param instance
+     * @param retryTimesWhenSendFailed
+     * @param context
+     * @param producer
+     *
+     * @return
+     *
+     * @throws RemotingException
+     * @throws MQBrokerException
+     * @throws InterruptedException
+     */
     public SendResult sendMessage(
         final String addr,
         final String brokerName,
@@ -518,8 +540,10 @@ public class MQClientAPIImpl {
         final long timeoutMillis,
         final RemotingCommand request
     ) throws RemotingException, MQBrokerException, InterruptedException {
+        // 发送操作
         RemotingCommand response = this.remotingClient.invokeSync(addr, request, timeoutMillis);
         assert response != null;
+        // 将返回结果组装成SendResult
         return this.processSendResponse(brokerName, msg, response, addr);
     }
 
@@ -1384,6 +1408,21 @@ public class MQClientAPIImpl {
         return getTopicRouteInfoFromNameServer(topic, timeoutMillis, true);
     }
 
+    /**
+     * 通过topic组装GetRouteInfoRequestHeader 并通过rocketMq远程客户端(RemotingClient)创建
+     *
+     * @param topic
+     * @param timeoutMillis
+     * @param allowTopicNotExist
+     *
+     * @return
+     *
+     * @throws MQClientException
+     * @throws InterruptedException
+     * @throws RemotingTimeoutException
+     * @throws RemotingSendRequestException
+     * @throws RemotingConnectException
+     */
     public TopicRouteData getTopicRouteInfoFromNameServer(final String topic, final long timeoutMillis,
         boolean allowTopicNotExist) throws MQClientException, InterruptedException, RemotingTimeoutException, RemotingSendRequestException, RemotingConnectException {
         GetRouteInfoRequestHeader requestHeader = new GetRouteInfoRequestHeader();

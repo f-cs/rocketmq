@@ -55,6 +55,13 @@ public class MQFaultStrategy {
         this.sendLatencyFaultEnable = sendLatencyFaultEnable;
     }
 
+    /**
+     * 基于一定算法获取messageQueue
+     *
+     * @param tpInfo
+     * @param lastBrokerName
+     * @return
+     */
     public MessageQueue selectOneMessageQueue(final TopicPublishInfo tpInfo, final String lastBrokerName) {
         if (this.sendLatencyFaultEnable) {
             try {
