@@ -539,23 +539,31 @@ public class DefaultMQProducerImpl implements MQProducerInner {
         final SendCallback sendCallback,
         final long timeout /* 默认3秒 */
     ) throws MQClientException, RemotingException, MQBrokerException, InterruptedException {
+        // 校验Producer处于运行状态
         this.makeSureStateOK();
+        // 校验消息格式
         Validators.checkMessage(msg, this.defaultMQProducer);
+        // 调用编号；用于下面打印日志，标记为同一次发送消息
         final long invokeID = random.nextLong();
         long beginTimestampFirst = System.currentTimeMillis();
         long beginTimestampPrev = beginTimestampFirst;
         long endTimestamp = beginTimestampFirst;
-        // 获取topic的发布信息，不存在则先调用创建，再返回
+        // 获取 Topic路由信息，不存在则先调用创建，再返回
         TopicPublishInfo topicPublishInfo = this.tryToFindTopicPublishInfo(msg.getTopic());
         if (topicPublishInfo != null && topicPublishInfo.ok()) {
             boolean callTimeout = false;
+            // 最后选择消息要发送到的队列
             MessageQueue mq = null;
             Exception exception = null;
+            // 最后一次发送结果
             SendResult sendResult = null;
             // 如果是同步发送的话，总次数等于 1 + 2(失败重试次数)，否则总次数为1
             int timesTotal = communicationMode == CommunicationMode.SYNC ? 1 + this.defaultMQProducer.getRetryTimesWhenSendFailed() : 1;
+            // 第几次发送
             int times = 0;
+            // 存储每次发送消息选择的broker名
             String[] brokersSent = new String[timesTotal];
+            // 循环调用发送消息，直到成功
             for (; times < timesTotal; times++) {
                 String lastBrokerName = null == mq ? null : mq.getBrokerName();
                 // 通过一定算法，从topic对应的MessageQueue中获取一个
@@ -574,9 +582,10 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                             callTimeout = true;
                             break;
                         }
-                        // 核心发送
+                        // 发送消息核心方法
                         sendResult = this.sendKernelImpl(msg, mq, communicationMode, sendCallback, topicPublishInfo, timeout - costTime);
                         endTimestamp = System.currentTimeMillis();
+                        // 更新Broker可用性信息
                         this.updateFaultItem(mq.getBrokerName(), endTimestamp - beginTimestampPrev, false);
                         switch (communicationMode) {
                             case ASYNC:
@@ -594,7 +603,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                             default:
                                 break;
                         }
-                    } catch (RemotingException e) {
+                    } catch (RemotingException e) { // 打印异常，更新Broker可用性信息，继续循环
                         endTimestamp = System.currentTimeMillis();
                         this.updateFaultItem(mq.getBrokerName(), endTimestamp - beginTimestampPrev, true);
                         log.warn(String.format("sendKernelImpl exception, resend at once, InvokeID: %s, RT: %sms, Broker: %s", invokeID, endTimestamp - beginTimestampPrev, mq), e);
@@ -635,6 +644,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                 }
             }
 
+            // 返回发送结果
             if (sendResult != null) {
                 return sendResult;
             }
@@ -678,16 +688,19 @@ public class DefaultMQProducerImpl implements MQProducerInner {
      * @return
      */
     private TopicPublishInfo tryToFindTopicPublishInfo(final String topic) {
+        // 缓存中获取 Topic发布信息
         TopicPublishInfo topicPublishInfo = this.topicPublishInfoTable.get(topic);
+        // 当无可用的 Topic发布信息时，从Namesrv获取一次
         if (null == topicPublishInfo || !topicPublishInfo.ok()) {
             this.topicPublishInfoTable.putIfAbsent(topic, new TopicPublishInfo());
             this.mQClientFactory.updateTopicRouteInfoFromNameServer(topic);
             topicPublishInfo = this.topicPublishInfoTable.get(topic);
         }
 
+        // 若获取的 Topic发布信息时候可用，则返回
         if (topicPublishInfo.isHaveTopicRouterInfo() || topicPublishInfo.ok()) {
             return topicPublishInfo;
-        } else {
+        } else { // 当从 Namesrv 无法获取时，使用 {@link DefaultMQProducer#createTopicKey} 对应的 Topic发布信息。目的是当 Broker 开启自动创建 Topic开关时，Broker 接收到消息后自动创建Topic
             this.mQClientFactory.updateTopicRouteInfoFromNameServer(topic, true, this.defaultMQProducer);
             topicPublishInfo = this.topicPublishInfoTable.get(topic);
             return topicPublishInfo;
