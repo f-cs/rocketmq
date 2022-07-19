@@ -140,6 +140,7 @@ public class DefaultMQProducer extends ClientConfig implements MQProducer {
 
     /**
      * Constructor specifying producer group.
+     * 生产者入口
      *
      * @param producerGroup Producer group, see the name-sake field.
      */

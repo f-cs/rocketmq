@@ -69,6 +69,9 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.when;
 
+/**
+ * 生产者测试入口
+ */
 @RunWith(MockitoJUnitRunner.class)
 public class DefaultMQProducerTest {
     @Spy
@@ -122,7 +125,8 @@ public class DefaultMQProducerTest {
     @Test
     public void testSendMessage_ZeroMessage() throws InterruptedException, RemotingException, MQBrokerException {
         try {
-            producer.send(zeroMsg);
+            SendResult send = producer.send(zeroMsg);
+            System.out.println(send);
             failBecauseExceptionWasNotThrown(MQClientException.class);
         } catch (MQClientException e) {
             assertThat(e).hasMessageContaining("message body length is zero");
@@ -136,6 +140,7 @@ public class DefaultMQProducerTest {
             producer.send(message);
             failBecauseExceptionWasNotThrown(MQClientException.class);
         } catch (MQClientException e) {
+            e.printStackTrace();
             assertThat(e).hasMessageContaining("No name server address");
         }
     }
@@ -147,6 +152,7 @@ public class DefaultMQProducerTest {
             producer.send(message);
             failBecauseExceptionWasNotThrown(MQClientException.class);
         } catch (MQClientException e) {
+            e.printStackTrace();
             assertThat(e).hasMessageContaining("No route info of this topic");
         }
     }
@@ -155,6 +161,7 @@ public class DefaultMQProducerTest {
     public void testSendMessageSync_Success() throws RemotingException, InterruptedException, MQBrokerException, MQClientException {
         when(mQClientAPIImpl.getTopicRouteInfoFromNameServer(anyString(), anyLong())).thenReturn(createTopicRoute());
         SendResult sendResult = producer.send(message);
+        System.out.println("发送结果：" + sendResult);
 
         assertThat(sendResult.getSendStatus()).isEqualTo(SendStatus.SEND_OK);
         assertThat(sendResult.getOffsetMsgId()).isEqualTo("123");

@@ -66,10 +66,13 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
 
     /**
      * Internal implementation. Most of the functions herein are delegated to it.
+     * 消息消费的内部实现
      */
     protected final transient DefaultMQPushConsumerImpl defaultMQPushConsumerImpl;
 
     /**
+     * 消费组
+     *
      * Consumers of the same role is required to have exactly same subscriptions and consumerGroup to correctly achieve
      * load balance. It's required and needs to be globally unique.
      * </p>
@@ -79,6 +82,8 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
     private String consumerGroup;
 
     /**
+     * 消费端模式，默认集群模式，还有一种广播模式
+     *
      * Message model defines the way how messages are delivered to each consumer clients.
      * </p>
      *
@@ -122,6 +127,10 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
      * messages born prior to {@link #consumeTimestamp} will be ignored
      * </li>
      * </ul>
+     *
+     * 1.CONSUME_FROM_LAST_OFFSET 最大偏移量开始
+     * 2.CONSUME_FROM_FIRST_OFFSET 最小偏移量开始
+     * 3.CONSUME_FROM_TIMESTAMP 从消费者启动时间戳开始
      */
     private ConsumeFromWhere consumeFromWhere = ConsumeFromWhere.CONSUME_FROM_LAST_OFFSET;
 
@@ -135,47 +144,56 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
 
     /**
      * Queue allocation algorithm specifying how message queues are allocated to each consumer clients.
+     * 集群模式下消费队列负载均衡策略
      */
     private AllocateMessageQueueStrategy allocateMessageQueueStrategy;
 
     /**
      * Subscription relationship
+     * 订阅关系
      */
     private Map<String /* topic */, String /* sub expression */> subscription = new HashMap<String, String>();
 
     /**
      * Message listener
+     * 消息消费监听器
      */
     private MessageListener messageListener;
 
     /**
      * Offset Storage
+     * 消息消费进度存储器
      */
     private OffsetStore offsetStore;
 
     /**
      * Minimum consumer thread number
+     * 消费线程最小线程数
      */
     private int consumeThreadMin = 20;
 
     /**
      * Max consumer thread number
+     * 消费线程最大线程数
      */
     private int consumeThreadMax = 20;
 
     /**
      * Threshold for dynamic adjustment of the number of thread pool
+     * 动态调整线程池数量的阈值
      */
     private long adjustThreadPoolNumsThreshold = 100000;
 
     /**
      * Concurrently max span offset.it has no effect on sequential consumption
+     * 并发消费时拉取消息前会有流控，会判断处理队列中最大偏移量和最小偏移量的跨度，不能大于2000
      */
     private int consumeConcurrentlyMaxSpan = 2000;
 
     /**
      * Flow control threshold on queue level, each message queue will cache at most 1000 messages by default,
      * Consider the {@code pullBatchSize}, the instantaneous value may exceed the limit
+     * 队列级别的流控阈值，每个消息队列默认最多缓存1000条消息
      */
     private int pullThresholdForQueue = 1000;
 
@@ -185,6 +203,7 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
      *
      * <p>
      * The size of a message only measured by message body, so it's not accurate
+     * 在队列级别限制缓存的消息大小，每个消息队列默认最多缓存 100 MiB 消息
      */
     private int pullThresholdSizeForQueue = 100;
 
@@ -212,6 +231,7 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
 
     /**
      * Message pull Interval
+     * push模式下任务拉取的时间间隔
      */
     private long pullInterval = 0;
 
@@ -241,16 +261,19 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
      * In orderly mode, -1 means Integer.MAX_VALUE.
      *
      * If messages are re-consumed more than {@link #maxReconsumeTimes} before success.
+     * 消息最大消费重试次数，并发模式下-1=16，顺序模式下-1=Integer.MAX_VALUE
      */
     private int maxReconsumeTimes = -1;
 
     /**
      * Suspending pulling time for cases requiring slow pulling like flow-control scenario.
+     * 对于需要缓慢拉动的情况（如流量控制场景）暂停拉动时间
      */
     private long suspendCurrentQueueTimeMillis = 1000;
 
     /**
      * Maximum amount of time in minutes a message may block the consuming thread.
+     * 消息消费线程的超时时间（以分钟为单位）
      */
     private long consumeTimeout = 15;
 
