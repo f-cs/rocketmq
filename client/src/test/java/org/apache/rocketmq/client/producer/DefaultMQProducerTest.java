@@ -71,6 +71,7 @@ import static org.mockito.Mockito.when;
 
 /**
  * 生产者测试入口
+ * MQClientAPIImpl才是真正和netty交互的类
  */
 @RunWith(MockitoJUnitRunner.class)
 public class DefaultMQProducerTest {
@@ -98,6 +99,36 @@ public class DefaultMQProducerTest {
         zeroMsg = new Message(topic, new byte[] {});
         bigMessage = new Message(topic, "This is a very huge message!".getBytes());
 
+        /**
+         * Start 总体流程
+         * 1 设置生产者组
+         *
+         * 2 检查当前状态，只允许为 CreateJust
+         *
+         * 3 从 MQClientManage 获取 MQClient 工厂
+         *  3.1 已经被创建则直接返回
+         *
+         * 4 注册生产者组
+         *
+         * 5 启动 MQClient 工厂
+         *
+         *  5.1 NameSrv 地址为空时，尝试通过设定的地址使用HTTP获取NameSrv地址
+         *  5.2 开启 Netty 的请求响应的 Channel
+         *  5.3 开启调度任务
+             5.3.1 从远程服务器不断更新 NameServer 地址
+             5.3.2 定时从NameServer更新Topic的路由信息
+             5.3.3 定期清除离线的Broker地址，同时发送心跳
+             5.3.4 持久化所有的拥有的消费者偏移量
+             5.3.5 动态对所有消费者的线程池容量进行调整
+         *
+         * 5.4 开启拉取服务
+         *
+         * 5.5 开启再均衡服务
+         *
+         * 5.6 开启push服务
+         *
+         * 启动 trace dispatcher 服务
+         */
         producer.start();
 
         Field field = DefaultMQProducerImpl.class.getDeclaredField("mQClientFactory");
@@ -182,6 +213,33 @@ public class DefaultMQProducerTest {
     public void testSendMessageAsync_Success() throws RemotingException, InterruptedException, MQBrokerException, MQClientException {
         final CountDownLatch countDownLatch = new CountDownLatch(1);
         when(mQClientAPIImpl.getTopicRouteInfoFromNameServer(anyString(), anyLong())).thenReturn(createTopicRoute());
+        /**
+         * send 发送流程
+         * 1 检查消息
+         *
+         * 2 从消息的目的 TopicName 中获取元信息；若获取不到 Topic，则抛异常
+         *  2.1 从本地获取，没有则从 NameServer 获取
+         *      2.1.1 从 NameServer 获取 Topic 元信息，没有则直接返回
+         *      2.1.2 更新获取的 Topic 的路由信息
+         *  2.2 将获取的 Topic 直接返回，若 NameServer 也没，则进行创建
+         *      2.2.1 获取默认 Topic；获取失败直接返回
+         *      2.2.2 继承该 Topic 的信息来进行更改以作为新 Topic
+         *
+         * 3 从 Topic 中选择 Queue
+         *  3.1 排除掉在故障退避的 Broker 后，将下一个 Broker 所在的 Queue 返回
+         *  3.2 所有 Broker 都需要退避下，选择次优 Broker
+         *
+         * 4 发送消息；失败则退回第三步
+         *  4.1 Vip 检查
+         *  4.2 消息类型检查
+         *  4.3 调用钩子
+         *  4.4 组装消息头
+         *  4.5 发送消息
+         *
+         * 5 更新故障退避信息
+         *
+         * 6 根据发送方式返回结果
+         */
         producer.send(message, new SendCallback() {
             @Override
             public void onSuccess(SendResult sendResult) {
