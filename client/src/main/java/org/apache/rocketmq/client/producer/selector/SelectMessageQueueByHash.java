@@ -21,6 +21,10 @@ import org.apache.rocketmq.client.producer.MessageQueueSelector;
 import org.apache.rocketmq.common.message.Message;
 import org.apache.rocketmq.common.message.MessageQueue;
 
+/**
+ * 根据附加参数的Hash值，按照消息队列列表的大小取余数，得到消息队列的index
+ * 可用于处理顺序消息，订单号作为hash运算对象，就能保证相同订单号的消息能够落在相同的queue队列上
+ */
 public class SelectMessageQueueByHash implements MessageQueueSelector {
 
     @Override
