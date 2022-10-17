@@ -31,18 +31,25 @@ public class MessageExt extends Message {
 
     private int queueId;
 
+    // 存盘的大小
     private int storeSize;
-
+    // 在 ConsumerQueue 中的偏移量
     private long queueOffset;
     private int sysFlag;
+    // 消息创建时间
     private long bornTimestamp;
+    // 创建地址
     private SocketAddress bornHost;
 
+    // 存盘时间
     private long storeTimestamp;
     private SocketAddress storeHost;
     private String msgId;
+    // 在 commitLog 中的偏移量
     private long commitLogOffset;
+    // crc 校验
     private int bodyCRC;
+    // 消费重试次数
     private int reconsumeTimes;
 
     private long preparedTransactionOffset;

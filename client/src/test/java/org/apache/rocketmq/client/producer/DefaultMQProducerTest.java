@@ -70,8 +70,10 @@ import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.when;
 
 /**
- * 生产者测试入口
+ * 生产者测试入口，发消息入口
  * MQClientAPIImpl才是真正和netty交互的类
+ *
+ * 执行发送类 MQClientAPIImpl -> NettyRemotingClient(初始化netty客户端) -> NettyRemotingAbstract
  */
 @RunWith(MockitoJUnitRunner.class)
 public class DefaultMQProducerTest {

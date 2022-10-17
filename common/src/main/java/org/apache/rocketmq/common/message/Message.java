@@ -26,7 +26,9 @@ public class Message implements Serializable {
     private static final long serialVersionUID = 8445773977080406428L;
 
     private String topic;
+    // 消息的标识(flag)，区分是普通 RPC 还是 oneway RPC 的标志
     private int flag;
+
     private Map<String, String> properties;
     private byte[] body;
     private String transactionId;
