@@ -41,6 +41,11 @@ import org.apache.rocketmq.srvutil.ServerUtil;
 import org.apache.rocketmq.srvutil.ShutdownHookThread;
 import org.slf4j.LoggerFactory;
 
+/**
+ * 启动首先设置 ROCKETMQ_HOME_PROPERTY
+ * 然后将 distribution 模块下的conf里面的logback_namesrv.xml拷贝到 上面目录上
+ *
+ */
 public class NamesrvStartup {
 
     private static InternalLogger log;
@@ -48,6 +53,7 @@ public class NamesrvStartup {
     private static CommandLine commandLine = null;
 
     public static void main(String[] args) {
+        System.setProperty(MixAll.ROCKETMQ_HOME_PROPERTY, "/Users/shuai/rmq");
         main0(args);
     }
 
